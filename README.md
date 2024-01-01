@@ -19,3 +19,10 @@ d - delete entry
 r - rename or move entry
 
 q - quit
+
+# Warning
+This "file manager" has lots of issues, if you care. I may update it if I am not lazy, but for now you may not want to use it daily.
+What I mean by issues are:
+
+- Too many entries, it will go beyond the terminal and you won't be able to see them
+I forgot the others
