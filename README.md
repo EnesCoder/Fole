@@ -7,9 +7,15 @@ I think you have problems if you want to try this as your main file manager, bı
 So here is a tutorial:
 
 w - go up
+
 s - go down
+
 b - go to the parent directory
+
 a - add entry
+
 d - delete entry
+
 r - rename or move entry
+
 q - quit
