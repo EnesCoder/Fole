@@ -1,4 +1,3 @@
-#include <cstdio>
 #include <filesystem>
 #include <iostream>
 #include <ncurses.h>
@@ -24,19 +23,19 @@ void PrintWithCol(std::string value, unsigned int colId)
 void ShowEntries(fs::path path, unsigned int entryIdx)
 {
     PrintWithCol(path.string() + '\n', PATH_COL_ID);
-    try{
-        unsigned int curIdx = 0;
-        for(const auto& entry : fs::directory_iterator(path)){
-            std::string entryVal = (curIdx == entryIdx ? "> " : "  ") + entry.path().filename().string() + " " +
-                    (fs::is_directory(entry.path()) ? "(dir)" : "(file)") + '\n';
-            PrintWithCol(entryVal, (fs::is_directory(entry.path()) ? DIR_COL_ID : FILE_COL_ID));
-            ++curIdx;
-        }
-    } catch(const fs::filesystem_error er){
+    //try{
+    unsigned int curIdx = 0;
+    for(const auto& entry : fs::directory_iterator(path)){
+        std::string entryVal = (curIdx == entryIdx ? "> " : "  ") + entry.path().filename().string() + " " +
+                (fs::is_directory(entry.path()) ? "(dir)" : "(file)") + '\n';
+        PrintWithCol(entryVal, (fs::is_directory(entry.path()) ? DIR_COL_ID : FILE_COL_ID));
+        ++curIdx;
+    }
+    /*} catch(const fs::filesystem_error er){
         endwin();
         std::cerr << "An error occured: " << er.what() << std::endl;
         exit(1);
-    }
+    }*/
 }
 
 std::string ReadFromUser()
@@ -50,16 +49,20 @@ std::string ReadFromUser()
     return input;
 }
 
+void giveErr(std::string desc)
+{
+    endwin();
+    std::cerr << "An error occured: " << desc << std::endl;
+    exit(1);
+}
+
 int main(int argc, char* argv[])
 {
     initscr();
     noecho();
     cbreak();
-    if (has_colors() == FALSE) {
-        endwin();
-        printf("Your terminal does not support color\n");
-        exit(1);
-    }
+    if (has_colors() == FALSE)
+        giveErr("Your terminal does not support colors");
     start_color();
     init_pair(PATH_COL_ID, COLOR_GREEN, COLOR_BLACK);
     init_pair(DIR_COL_ID, COLOR_BLUE, COLOR_BLACK);
@@ -98,36 +101,36 @@ int main(int argc, char* argv[])
             std::string entryNm = ReadFromUser();
 
             if(entryNm[entryNm.length() - 1] == '/'){
-                if(!fs::create_directory(curPath.string() + "/" + entryNm)){
-                    endwin();
-                    std::cerr << "Could not create directory" << std::endl;
-                    exit(1);
-                }
+                if(!fs::create_directory(curPath.string() + "/" + entryNm))
+                    giveErr("Could not create directory");
             } else{
                 std::ofstream newFile(curPath.string() + "/" + entryNm);
                 if(newFile.is_open())
                     newFile.close();
-                else{
-                    endwin();
-                    std::cerr << "Could not create file" << std::endl;
-                    exit(1);
-                }
+                else
+                    giveErr("Could not create file");
             }
         } else if(inp == 'd'){
             PrintWithCol("\n\nYou sure you wanna delete that one? (y/n): ", STATUS_COL_ID);
             std::string choice = ReadFromUser();
 
             if(choice == "y"){
-                if(!fs::remove(entries[curEntryIdx].path())){
-                    endwin();
-                    std::cerr << "Could not delete entry" << std::endl;
-                    exit(1);
-                }
+                if(!fs::remove(entries[curEntryIdx].path()))
+                    giveErr("Could not delete entry");
             }
         } else if(inp == 'r'){
             PrintWithCol("\n\nRenaming entry: ", STATUS_COL_ID);
             std::string newEntryNm = ReadFromUser();
             fs::rename(entries[curEntryIdx].path(), curPath.string() + "/" + newEntryNm);
+        } else if(inp == 'c'){
+            PrintWithCol("\n\nWhere to copy (include the copy name): ", STATUS_COL_ID);
+            fs::path path = ReadFromUser();
+
+            // TODO: You may improve the error handling here a bit, also in the whole program maybe
+            if(!fs::exists(path))
+                fs::copy(entries[curEntryIdx].path(), path);
+            else
+                giveErr("The copy path you specified already exists");
         } else if(inp == 'q'){
             endwin();
             std::cout << "Good bye sir!" << std::endl;
